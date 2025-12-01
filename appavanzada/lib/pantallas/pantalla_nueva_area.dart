@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/area_storage.dart';
+import '../models/area.dart';
 
 class PantallaNuevaArea extends StatefulWidget {
   final String areaNombre;
@@ -7,7 +8,13 @@ class PantallaNuevaArea extends StatefulWidget {
   final bool isCustom;
   final String? originalName; // si se pasa, indica edición en vez de creación
 
-  const PantallaNuevaArea({super.key, required this.areaNombre, required this.tipo, this.isCustom = false, this.originalName});
+  const PantallaNuevaArea({
+    super.key,
+    required this.areaNombre,
+    required this.tipo,
+    this.isCustom = false,
+    this.originalName,
+  });
 
   @override
   State<PantallaNuevaArea> createState() => _PantallaNuevaAreaState();
@@ -43,79 +50,106 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
         actions: [
           TextButton(
             onPressed: () async {
-              final finalName = widget.isCustom ? _controller.text.trim() : _controller.text.trim();
+              final finalName = widget.isCustom
+                  ? _controller.text.trim()
+                  : _controller.text.trim();
               if (finalName.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ingresa un nombre para la área')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Ingresa un nombre para la área'),
+                  ),
+                );
                 return;
               }
               // Llamar a la función asíncrona separada que hace el await y usa context después
               _saveAreaAndClose(finalName);
             },
             child: const Text('CREAR', style: TextStyle(color: Colors.white)),
-          )
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Nombre del area', style: TextStyle(fontSize: 12)),
-                const SizedBox(height: 6),
-                // Always allow editing the name here so the user can change
-                // the selection (e.g. change from 'Baño' to 'Comedor').
-                TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(border: UnderlineInputBorder()),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 260,
-                    height: 140,
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), color: Colors.grey[200]),
-                    child: imageUrl != null
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : const Icon(Icons.image, size: 56, color: Colors.black26),
+      body: Container(
+        color: const Color.fromARGB(255, 103, 179, 255),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Nombre del area', style: TextStyle(fontSize: 15)),
+                  const SizedBox(height: 6),
+                  // Always allow editing the name here so the user can change
+                  // the selection (e.g. change from 'Baño' to 'Comedor').
+                  TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 40),
+                  Center(
+                    child: Container(
+                      width: 260,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: Colors.grey[200],
+                      ),
+                      child: imageUrl != null
+                          ? Image.network(imageUrl, fit: BoxFit.cover)
+                          : const Icon(
+                              Icons.image,
+                              size: 56,
+                              color: Colors.black26,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 18),
-          // Tabs row
-          Row(
-            children: List.generate(3, (i) {
-              final isSel = widget.tipo == i;
-              return Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  color: isSel ? Colors.blue[600] : Colors.blue[400],
-                  child: Center(child: Text(tabs[i], style: const TextStyle(color: Colors.white))),
-                ),
-              );
-            }),
-          ),
-
-          const SizedBox(height: 8),
-          // Areas list with selected highlighted
-          Expanded(
-            child: ListView(
-              children: [
-                const Divider(height: 1),
-                _areaTile('Cocina', name),
-                _areaTile('Sala de Estar', name),
-                _areaTile('Comedor', name),
-                _areaTile('Dormitorio', name),
-              ],
+            Spacer(),
+            
+            // Tabs row
+            Row(
+              children: List.generate(3, (i) {
+                final isSel = widget.tipo == i;
+                return Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    color: isSel ? Colors.blue[600] : Colors.blue[400],
+                    child: Center(
+                      child: Text(
+                        tabs[i],
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
-          ),
-        ],
+        
+            const SizedBox(height: 8),
+            // Areas list with selected highlighted
+            Expanded(
+              child: ListView(
+                children: [
+                  const Divider(height: 1),
+                  _areaTile('Cocina', name),
+                  _areaTile('Sala de Estar', name),
+                  _areaTile('Comedor', name),
+                  _areaTile('Dormitorio', name),
+                ],
+              ),
+            ),
+            SizedBox(height: 50,)
+          ],
+        ),
       ),
     );
   }
@@ -137,10 +171,13 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
 
   String? _imageForArea(String name) {
     final n = name.toLowerCase();
-    if (n.contains('comedor')) return 'https://picsum.photos/seed/comedor/600/300';
+    if (n.contains('comedor'))
+      return 'https://picsum.photos/seed/comedor/600/300';
     if (n.contains('sala')) return 'https://picsum.photos/seed/sala/600/300';
-    if (n.contains('cocina')) return 'https://picsum.photos/seed/cocina/600/300';
-    if (n.contains('dormitorio')) return 'https://picsum.photos/seed/dormitorio/600/300';
+    if (n.contains('cocina'))
+      return 'https://picsum.photos/seed/cocina/600/300';
+    if (n.contains('dormitorio'))
+      return 'https://picsum.photos/seed/dormitorio/600/300';
     if (n.contains('jard')) return 'https://picsum.photos/seed/jardin/600/300';
     if (n.contains('garaj')) return 'https://picsum.photos/seed/garaje/600/300';
     if (n.isEmpty) return null;
@@ -155,10 +192,14 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     final end = cleaned.length.clamp(1, 12);
     return cleaned.substring(0, end);
   }
-  
+
   Future<void> _saveAreaAndClose(String finalName) async {
     // Crear objeto Area y guardarlo
-    final Area area = Area(name: finalName, tipo: widget.tipo, imageSeed: _seedForName(finalName));
+    final Area area = Area(
+      name: finalName,
+      tipo: widget.tipo,
+      imageSeed: _seedForName(finalName),
+    );
     final storage = AreaStorage();
     if (widget.originalName != null && widget.originalName!.isNotEmpty) {
       await storage.updateArea(widget.originalName!, area);
