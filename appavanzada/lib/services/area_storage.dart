@@ -1,34 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-
-class Area {
-  final int? id; // Agregamos un ID para manejo interno de BD
-  final String name;
-  final int tipo; // 0 dentro, 1 fuera, 2 copiar
-  final String? imageSeed;
-
-  Area({this.id, required this.name, required this.tipo, this.imageSeed});
-
-  // Convertir a Map para insertar en la BD
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'tipo': tipo,
-      'imageSeed': imageSeed,
-    };
-  }
-
-  // Crear objeto Area desde un Map de la BD
-  factory Area.fromMap(Map<String, dynamic> map) {
-    return Area(
-      id: map['id'] as int?,
-      name: map['name'] as String,
-      tipo: map['tipo'] as int,
-      imageSeed: map['imageSeed'] as String?,
-    );
-  }
-}
+import '../models/area.dart';
 
 class AreaStorage {
   static Database? _database;

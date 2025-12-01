@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'pantalla_selecion_area.dart';
 import 'pantalla_nueva_area.dart';
 import '../services/area_storage.dart';
+import 'pantalla_infoArea.dart';
+import '../models/area.dart';
 
 class PantallaAreas extends StatefulWidget {
   const PantallaAreas({super.key});
@@ -11,8 +13,15 @@ class PantallaAreas extends StatefulWidget {
 }
 
 class _PantallaAreasState extends State<PantallaAreas> {
-  final AreaStorage _storage = AreaStorage();
   List<Area> _areas = [];
+  final AreaStorage _storage = AreaStorage();
+
+  // Área por defecto
+  final Area defaultArea = Area(
+    name: 'Sala de estar',
+    tipo: 0,
+    imageSeed: 'sala',
+  );
 
   @override
   void initState() {
@@ -22,10 +31,21 @@ class _PantallaAreasState extends State<PantallaAreas> {
 
   Future<void> _loadAreas() async {
     final loaded = await _storage.loadAreas();
+
     if (!mounted) return;
-    setState(() {
-      _areas = loaded;
-    });
+
+    // Si la DB está vacía, agregamos el área por defecto y recargamos
+    if (loaded.isEmpty) {
+      await _storage.addArea(defaultArea);
+      final reloaded = await _storage.loadAreas();
+      setState(() {
+        _areas = reloaded;
+      });
+    } else {
+      setState(() {
+        _areas = loaded;
+      });
+    }
   }
 
   void _showAreaOptions(Area area) {
@@ -61,12 +81,19 @@ class _PantallaAreasState extends State<PantallaAreas> {
                 onTap: () {
                   Navigator.of(context).pop();
                   // Placeholder: reordenar no implementado ahora
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Función reordenar pendiente')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Función reordenar pendiente'),
+                    ),
+                  );
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Eliminar',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () async {
                   Navigator.of(context).pop();
                   await _storage.deleteArea(area.name);
@@ -83,13 +110,9 @@ class _PantallaAreasState extends State<PantallaAreas> {
 
   @override
   Widget build(BuildContext context) {
-    // default tiles (if no areas saved yet) - keep a couple examples
-    final defaults = [
-      Area(name: 'Sala de estar', tipo: 0, imageSeed: 'sala'),
-      Area(name: 'Comedor', tipo: 0, imageSeed: 'comedor'),
-    ];
-
-    final displayAreas = _areas.isEmpty ? defaults : _areas;
+    //Defaults eliminados y un solo default agregado ya en la db en _areas
+    
+    final displayAreas = _areas;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -121,7 +144,10 @@ class _PantallaAreasState extends State<PantallaAreas> {
             // Grid of area cards
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: GridView.count(
                   crossAxisCount: 2,
                   mainAxisSpacing: 18,
@@ -144,12 +170,19 @@ class _PantallaAreasState extends State<PantallaAreas> {
                                   // abrir pantalla de selección y recargar cuando vuelva
                                   await Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const PantallaSelecionArea()),
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PantallaSelecionArea(),
+                                    ),
                                   );
                                   _loadAreas();
                                 },
                                 child: const Center(
-                                  child: Icon(Icons.add, size: 72, color: Colors.black54),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 72,
+                                    color: Colors.black54,
+                                  ),
                                 ),
                               ),
                             ),
@@ -165,6 +198,14 @@ class _PantallaAreasState extends State<PantallaAreas> {
                         : 'https://picsum.photos/seed/area$index/400/250';
 
                     return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InfoArea(area: area),
+                          ),
+                        );
+                      },
                       onLongPress: () => _showAreaOptions(area),
                       child: Column(
                         children: [
@@ -177,18 +218,26 @@ class _PantallaAreasState extends State<PantallaAreas> {
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Image.network(imageUrl, fit: BoxFit.cover),
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              Expanded(child: Text(area.name, style: const TextStyle(fontSize: 14))),
+                              Expanded(
+                                child: Text(
+                                  area.name,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
                               IconButton(
                                 onPressed: () => _showAreaOptions(area),
                                 icon: const Icon(Icons.more_vert),
-                              )
+                              ),
                             ],
                           ),
                         ],
@@ -205,9 +254,7 @@ class _PantallaAreasState extends State<PantallaAreas> {
       // Bottom navigation blue bar
       bottomNavigationBar: Container(
         height: 72,
-        decoration: const BoxDecoration(
-          color: Color(0xFF0095FF),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF0095FF)),
         child: SafeArea(
           top: false,
           child: Row(
@@ -215,11 +262,19 @@ class _PantallaAreasState extends State<PantallaAreas> {
             children: [
               IconButton(
                 onPressed: () {},
-                icon: const Icon(Icons.check_box, color: Colors.white, size: 30),
+                icon: const Icon(
+                  Icons.check_box,
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
               IconButton(
                 onPressed: () {},
-                icon: const Icon(Icons.view_list, color: Colors.white, size: 30),
+                icon: const Icon(
+                  Icons.view_list,
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
               IconButton(
                 onPressed: () {},

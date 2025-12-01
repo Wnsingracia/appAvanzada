@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/area_storage.dart';
+import '../models/area.dart';
 
 class PantallaNuevaArea extends StatefulWidget {
   final String areaNombre;
