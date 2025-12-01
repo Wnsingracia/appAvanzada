@@ -1,3 +1,4 @@
+import 'package:appavanzada/pantallas/pantalla_areas.dart';
 import 'package:flutter/material.dart';
 
 void main() {
