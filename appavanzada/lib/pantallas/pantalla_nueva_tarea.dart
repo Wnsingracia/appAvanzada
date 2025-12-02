@@ -61,16 +61,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                     (t) => t.nombre.toLowerCase() == nombre.toLowerCase());
 
                 if (!existe) {
-                  final nuevaTarea = Tarea(
-                    id: null,
-                    areaId: widget.areaId,
-                    nombre: nombre,
-                    completada: false,
-                  );
-
-                  await DatabaseHelper.instance.insertTarea(nuevaTarea);
-                  await _cargarTareas();
-
+                  // Solo seleccionamos el nombre, no insertamos aún
                   setState(() {
                     tareaSeleccionada = nombre;
                   });
@@ -165,7 +156,9 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PantallaAjustarTarea(
-                              // Aquí pasarías los parámetros necesarios
+                            // Aquí pasarías los parámetros necesarios
+                            areaId: widget.areaId,
+                            nombreTarea: tareaSeleccionada!,
                               ),
                         ),
                       );

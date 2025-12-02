@@ -1,3 +1,6 @@
+import 'package:appavanzada/pantallas/pantalla_configuracion.dart';
+import 'package:appavanzada/pantallas/pantalla_tareas_completas.dart';
+import 'package:appavanzada/pantallas/pantalla_tareas_pendientes.dart';
 import 'package:flutter/material.dart';
 import 'pantalla_selecion_area.dart';
 import 'pantalla_nueva_area.dart';
@@ -111,7 +114,7 @@ class _PantallaAreasState extends State<PantallaAreas> {
   @override
   Widget build(BuildContext context) {
     //Defaults eliminados y un solo default agregado ya en la db en _areas
-    
+
     final displayAreas = _areas;
 
     return Scaffold(
@@ -260,24 +263,46 @@ class _PantallaAreasState extends State<PantallaAreas> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // Tareasw completas
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PantallaTareasCompletas(),
+                    ),
+                  );
+                },
                 icon: const Icon(
                   Icons.check_box,
                   color: Colors.white,
                   size: 30,
                 ),
               ),
+
+              // Tareas Pendientes
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => PantallaTareasPendientes()),
+                  );
+                },
                 icon: const Icon(
                   Icons.view_list,
                   color: Colors.white,
                   size: 30,
                 ),
               ),
+
+              // Configuracion
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => Configuracion()),
+                  );
+                },
                 icon: const Icon(Icons.settings, color: Colors.white, size: 30),
               ),
             ],

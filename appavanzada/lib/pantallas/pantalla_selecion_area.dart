@@ -24,21 +24,10 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
       ];
     } else if (tab == 1) {
       // Fuera
-      return [
-        'Personalizar',
-        'Jardín',
-        'Garaje',
-        'Terraza',
-        'Patio',
-      ];
+      return ['Personalizar', 'Jardín', 'Garaje', 'Terraza', 'Patio'];
     }
     // Copiar (puede mostrar lo mismo que Dentro por ahora xd)
-    return [
-      'Seleccionar Area',
-      'Sala de Estar',
-      'Comedor',
-      'Dormitorio',
-    ];
+    return ['Seleccionar Area', 'Sala de Estar', 'Comedor', 'Dormitorio'];
   }
 
   @override
@@ -58,7 +47,7 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 200),
                   const Text(
                     'Selecciona\nTipo de Area',
                     textAlign: TextAlign.center,
@@ -68,8 +57,7 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 18),
-
+                  Spacer(),
                   // Tabs
                   Row(
                     children: List.generate(3, (i) {
@@ -80,7 +68,9 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
                           onTap: () => setState(() => selectedTab = i),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            color: isSelected ? Colors.blue[600] : Colors.blue[400],
+                            color: isSelected
+                                ? Colors.blue[600]
+                                : Colors.blue[400],
                             child: Center(
                               child: Text(
                                 labels[i],
@@ -107,19 +97,32 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     itemCount: _areasParaTab(selectedTab).length,
-                    separatorBuilder: (_, __) => const Divider(color: Colors.white30, height: 1),
+                    separatorBuilder: (_, __) =>
+                        const Divider(color: Colors.white30, height: 1),
                     itemBuilder: (context, index) {
                       final name = _areasParaTab(selectedTab)[index];
                       return ListTile(
-                        title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 16)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                        title: Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                        ),
                         onTap: () {
                           if (name == 'Personalizar') {
                             // Abrir pantalla para crear una área personalizada
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const PantallaNuevaArea(areaNombre: '', tipo: 0, isCustom: true),
+                                builder: (_) => const PantallaNuevaArea(
+                                  areaNombre: '',
+                                  tipo: 0,
+                                  isCustom: true,
+                                ),
                               ),
                             );
                           } else {

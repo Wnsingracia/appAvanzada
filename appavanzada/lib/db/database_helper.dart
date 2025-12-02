@@ -21,11 +21,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'tareas_hogar.db');
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   // --------------------------------------------------------
@@ -130,6 +126,29 @@ class DatabaseHelper {
   Future<void> clearTareas() async {
     final db = await database;
     await db.delete('tareas');
+  }
+
+  Future<List<Tarea>> getTareasCompletas() async {
+    final db = await database;
+    final res = await db.query(
+      "tareas",
+      where: "completada = ?",
+      whereArgs: [1],
+    );
+    return res.map((e) => Tarea.fromMap(e)).toList();
+  }
+
+  Future<List<Tarea>> getTareasPendientes() async {
+    final db = await database;
+
+    final res = await db.query(
+      'tareas',
+      where: 'completada = ?',
+      whereArgs: [0],
+      orderBy: 'ultimaFecha ASC', // se reordena luego en la app
+    );
+
+    return res.map((e) => Tarea.fromMap(e)).toList();
   }
 
   /// Devuelve lista de tareas sin nombres repetidos
