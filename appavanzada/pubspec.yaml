@@ -9,11 +9,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  intl: ^0.19.0
+
 
   # Persistencia de datos
   shared_preferences: ^2.2.2
   sqflite: ^2.3.0
   path: ^1.9.0
+
 
 dev_dependencies:
   flutter_test:

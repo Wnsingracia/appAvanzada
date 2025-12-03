@@ -14,30 +14,31 @@ class PantallaTareasCompletas extends StatefulWidget {
 class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
   DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
   List<Tarea> _tasks = [];
+  Map<int, String> _areaNames = {}; // Mapa areaId -> nombre
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadAreasAndTasks();
   }
 
-  //  Cargar tareas desde SQLite según el mes actual
-  Future<void> _loadTasks() async {
-    final DatabaseHelper db = DatabaseHelper.instance;
+  Future<void> _loadAreasAndTasks() async {
+    final db = DatabaseHelper.instance;
 
-    // Obtener todas las tareas COMPLETADAS
+    // Cargar todas las áreas
+    final areas = await db.getAreas();
+    _areaNames = { for (var a in areas) a.id!: a.name };
+
+    // Cargar tareas completadas
     final all = await db.getTareasCompletas();
-
-    // Filtrar por mes
     final filtered = all.where((t) {
       if (t.ultimaFecha == null) return false;
       final fecha = DateTime.tryParse(t.ultimaFecha!);
       if (fecha == null) return false;
-
-      return fecha.year == _currentMonth.year &&
-          fecha.month == _currentMonth.month;
+      return fecha.year == _currentMonth.year && fecha.month == _currentMonth.month;
     }).toList();
 
+    if (!mounted) return;
     setState(() => _tasks = filtered);
   }
 
@@ -45,14 +46,19 @@ class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
     });
-    _loadTasks();
+    _loadAreasAndTasks();
   }
 
   void _prevMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
     });
-    _loadTasks();
+    _loadAreasAndTasks();
+  }
+
+  /// Obtén el nombre del área según su ID, o "Área desconocida"
+  String _getAreaName(int id) {
+    return _areaNames[id] ?? "Área desconocida";
   }
 
   @override
@@ -233,17 +239,5 @@ class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
   }
 
   /// Obtén el nombre del área según su ID
-  String _getAreaName(int id) {
-    // Luego puedes reemplazar esto con tu tabla real de Áreas en SQLite
-    switch (id) {
-      case 1:
-        return "Cocina";
-      case 2:
-        return "Sala";
-      case 3:
-        return "Baño";
-      default:
-        return "Área desconocida";
-    }
-  }
+  
 }

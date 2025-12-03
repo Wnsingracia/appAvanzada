@@ -74,9 +74,7 @@ class _InfoAreaState extends State<InfoArea> {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = widget.area.imageSeed != null
-        ? 'https://picsum.photos/seed/${widget.area.imageSeed}/400/250'
-        : 'https://picsum.photos/seed/default${widget.area.id}/400/250';
+    final imageUrl = widget.area.imageUrlForArea(widget.area.name);
 
     return Scaffold(
       backgroundColor: Colors.white,
