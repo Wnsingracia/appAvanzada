@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../db/database_helper.dart'; // Usamos DB directamente
 
+
+
 class Configuracion extends StatefulWidget {
   const Configuracion({super.key});
 
@@ -9,7 +11,7 @@ class Configuracion extends StatefulWidget {
 }
 
 class _ConfiguracionState extends State<Configuracion> {
-  // Estado local para simular preferencias
+
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   bool _biometricEnabled = false;
@@ -25,7 +27,7 @@ class _ConfiguracionState extends State<Configuracion> {
       ),
       body: ListView(
         children: [
-          // --- Cabecera de Usuario ---
+
           Container(
             color: const Color(0xFF0095FF),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
@@ -53,9 +55,11 @@ class _ConfiguracionState extends State<Configuracion> {
               ],
             ),
           ),
+
+
           const SizedBox(height: 20),
 
-          // --- Sección General ---
+          // 2. Sección General
           _buildSectionTitle('General'),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
@@ -63,7 +67,11 @@ class _ConfiguracionState extends State<Configuracion> {
             subtitle: const Text('Cambiar la apariencia de la aplicación'),
             secondary: const Icon(Icons.dark_mode),
             value: _isDarkMode,
-            onChanged: (bool value) => setState(() => _isDarkMode = value),
+
+            onChanged: (bool value) {
+              setState(() => _isDarkMode = value);
+              // Aquí llamarías a tu ThemeProvider
+            },
           ),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
@@ -73,9 +81,9 @@ class _ConfiguracionState extends State<Configuracion> {
             value: _notificationsEnabled,
             onChanged: (val) => setState(() => _notificationsEnabled = val),
           ),
+
           const Divider(),
 
-          // --- Sección Seguridad ---
           _buildSectionTitle('Seguridad'),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
@@ -85,10 +93,12 @@ class _ConfiguracionState extends State<Configuracion> {
             value: _biometricEnabled,
             onChanged: (val) => setState(() => _biometricEnabled = val),
           ),
+
           const Divider(),
 
           // --- Zona de peligro: base de datos ---
           _buildSectionTitle('Base de Datos'),
+
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: const Text('Borrar todas las áreas', style: TextStyle(color: Colors.red)),
@@ -108,7 +118,7 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const SizedBox(height: 30),
 
-          // --- Versión de la app ---
+
           const Center(
             child: Text(
               'Versión 1.0.2 (Beta)',
@@ -135,13 +145,15 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
-  // --- Confirmación de borrado ---
+
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Estás seguro?'),
+
         content: const Text('Esto borrará todas las áreas en la base de datos SQLite local.'),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -149,6 +161,7 @@ class _ConfiguracionState extends State<Configuracion> {
           ),
           TextButton(
             onPressed: () async {
+
               Navigator.pop(context);
 
               final db = DatabaseHelper.instance;
@@ -157,6 +170,7 @@ class _ConfiguracionState extends State<Configuracion> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Todas las áreas han sido borradas')),
+
                 );
               }
             },
