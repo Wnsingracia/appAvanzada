@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+// Importaciones de tus modelos
 import '../models/area.dart';
-import '../models/tarea.dart';
+import '../models/tarea.dart'; // CORREGIDO: antes decía .dar
 
 class DatabaseHelper {
   DatabaseHelper._privateConstructor();
@@ -21,11 +22,19 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'tareas_hogar.db');
 
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(
+      path,
+      version: 1,
+      // IMPORTANTE: Esto activa el borrado en cascada (Foreign Keys)
+      onConfigure: (db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
+      onCreate: _onCreate,
+    );
   }
 
   // --------------------------------------------------------
-  // Creación de tablas
+  // CREACIÓN DE TABLAS
   // --------------------------------------------------------
   Future<void> _onCreate(Database db, int version) async {
     // Tabla Areas
@@ -39,6 +48,7 @@ class DatabaseHelper {
     ''');
 
     // Tabla Tareas
+    // ON DELETE CASCADE asegura que si borras un Área, se borren sus tareas automáticamente
     await db.execute('''
       CREATE TABLE tareas(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,13 +63,17 @@ class DatabaseHelper {
     ''');
   }
 
-  // --------------------------------------------------------
-  // AREAS
-  // --------------------------------------------------------
+  // ========================================================
+  //                      MÉTODOS: ÁREAS
+  // ========================================================
 
   Future<int> insertArea(Area area) async {
     final db = await database;
-    return await db.insert('areas', area.toMap());
+    return await db.insert(
+      'areas',
+      area.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<Area>> getAreas() async {
@@ -80,21 +94,26 @@ class DatabaseHelper {
 
   Future<int> deleteArea(int id) async {
     final db = await database;
+    // Gracias al PRAGMA foreign_keys = ON, esto borrará también las tareas asociadas
     return await db.delete('areas', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> clearAreas() async {
     final db = await database;
-    await db.delete('areas');
+    await db.delete('areas'); // Esto también borrará todas las tareas por cascada
   }
 
-  // --------------------------------------------------------
-  // TAREAS
-  // --------------------------------------------------------
+  // ========================================================
+  //                      MÉTODOS: TAREAS
+  // ========================================================
 
   Future<int> insertTarea(Tarea tarea) async {
     final db = await database;
-    return await db.insert('tareas', tarea.toMap());
+    return await db.insert(
+      'tareas',
+      tarea.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<Tarea>> getTareasPorArea(int areaId) async {
@@ -128,33 +147,33 @@ class DatabaseHelper {
     await db.delete('tareas');
   }
 
+  // Obtener solo tareas completadas (para historial)
   Future<List<Tarea>> getTareasCompletas() async {
     final db = await database;
     final res = await db.query(
       "tareas",
       where: "completada = ?",
-      whereArgs: [1],
+      whereArgs: [1], // 1 es true
+      orderBy: 'ultimaFecha DESC',
     );
     return res.map((e) => Tarea.fromMap(e)).toList();
   }
 
+  // Obtener solo tareas pendientes (para lista principal)
   Future<List<Tarea>> getTareasPendientes() async {
     final db = await database;
-
     final res = await db.query(
       'tareas',
       where: 'completada = ?',
-      whereArgs: [0],
-      orderBy: 'ultimaFecha ASC', // se reordena luego en la app
+      whereArgs: [0], // 0 es false
+      orderBy: 'ultimaFecha ASC',
     );
-
     return res.map((e) => Tarea.fromMap(e)).toList();
   }
 
-  /// Devuelve lista de tareas sin nombres repetidos
+  // Obtener lista única de nombres (para sugerencias al crear)
   Future<List<Tarea>> getTodasLasTareasNoRepetidas() async {
     final db = await database;
-
     final maps = await db.rawQuery('''
       SELECT nombre, MIN(id) as id, MIN(areaId) as areaId, MIN(completada) as completada,
              MIN(cantidadFrecuencia) as cantidadFrecuencia,
@@ -164,7 +183,6 @@ class DatabaseHelper {
       GROUP BY nombre
       ORDER BY nombre ASC
     ''');
-
     return maps.map((e) => Tarea.fromMap(e)).toList();
   }
 }

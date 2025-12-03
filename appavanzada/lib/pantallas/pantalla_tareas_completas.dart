@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/tarea.dart';
-import 'package:appavanzada/db/database_helper.dart'; // TU SERVICIO SQLITE
+import '../models/area.dart'; // Asegúrate de importar esto
+import 'package:appavanzada/db/database_helper.dart';
 
 class PantallaTareasCompletas extends StatefulWidget {
   const PantallaTareasCompletas({super.key});
@@ -15,44 +16,61 @@ class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
   DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
   List<Tarea> _tasks = [];
 
+  // DICCIONARIO PARA NOMBRES DE ÁREAS
+  // Clave: ID del área (int), Valor: Nombre del área (String)
+  Map<int, String> _nombresDeAreas = {};
+
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadData();
   }
 
-  //  Cargar tareas desde SQLite según el mes actual
-  Future<void> _loadTasks() async {
+  Future<void> _loadData() async {
     final DatabaseHelper db = DatabaseHelper.instance;
 
-    // Obtener todas las tareas COMPLETADAS
-    final all = await db.getTareasCompletas();
+    // 1. Cargar Tareas Completas
+    final allTasks = await db.getTareasCompletas();
 
-    // Filtrar por mes
-    final filtered = all.where((t) {
+    // 2. Cargar TODAS las Áreas para saber sus nombres
+    final allAreas = await db.getAreas(); // Asegúrate de tener este método en DatabaseHelper
+
+    // 3. Crear el diccionario ID -> Nombre
+    final Map<int, String> areaMap = {};
+    for (var area in allAreas) {
+      if (area.id != null) {
+        areaMap[area.id!] = area.name;
+      }
+    }
+
+    // 4. Filtrar tareas por mes
+    final filteredTasks = allTasks.where((t) {
       if (t.ultimaFecha == null) return false;
       final fecha = DateTime.tryParse(t.ultimaFecha!);
       if (fecha == null) return false;
-
       return fecha.year == _currentMonth.year &&
           fecha.month == _currentMonth.month;
     }).toList();
 
-    setState(() => _tasks = filtered);
+    if (!mounted) return;
+    setState(() {
+      _tasks = filteredTasks;
+      _nombresDeAreas = areaMap; // Guardamos el mapa
+    });
   }
 
   void _nextMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
     });
-    _loadTasks();
+    _loadData();
   }
 
   void _prevMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
     });
-    _loadTasks();
+    _loadData();
   }
 
   @override
@@ -64,165 +82,142 @@ class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
       body: SafeArea(
         child: Column(
           children: [
-            // ---------------------- TOP BAR ----------------------
+            // BARRA SUPERIOR
             Row(
               children: [
-                SizedBox(width: 25),
+                const SizedBox(width: 10),
                 IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                SizedBox(width: 60),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  child: Text(
-                    "Completado",
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      "Completado",
+                      style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 48), // Para equilibrar el icono de atrás
               ],
             ),
 
-            // ---------------------- MONTH SELECTOR ----------------------
+            // SELECTOR DE MES
             Container(
-              color: const Color.fromARGB(255, 255, 255, 255),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12)
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // LEFT ARROW
                   IconButton(
-                    icon: const Icon(
-                      Icons.arrow_left,
-                      color: Color.fromARGB(255, 0, 26, 255),
-                      size: 40,
-                    ),
+                    icon: const Icon(Icons.arrow_left, color: Colors.blue, size: 40),
                     onPressed: _prevMonth,
                   ),
-
                   Text(
                     monthName[0].toUpperCase() + monthName.substring(1),
                     style: const TextStyle(
-                      color: Color.fromARGB(255, 65, 128, 253),
-                      fontSize: 22,
+                      color: Colors.blue,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  // RIGHT ARROW
                   IconButton(
-                    icon: const Icon(
-                      Icons.arrow_right,
-                      color: Color.fromARGB(255, 4, 0, 255),
-                      size: 40,
-                    ),
+                    icon: const Icon(Icons.arrow_right, color: Colors.blue, size: 40),
                     onPressed: _nextMonth,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 12),
-
-            // ---------------------- TASKS LIST ----------------------
+            // LISTA DE TAREAS
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF74B8FF),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF74B8FF),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: _tasks.isEmpty
+                    ? const Center(
+                  child: Text(
+                    "No hay tareas este mes",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  child: _tasks.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No hay tareas completadas este mes",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _tasks.length,
-                          itemBuilder: (context, i) {
-                            final t = _tasks[i];
-                            final fecha = DateTime.parse(t.ultimaFecha!);
-                            final fechaStr = DateFormat(
-                              "d MMM (EEE) - HH:mm",
-                              "es_ES",
-                            ).format(fecha);
+                )
+                    : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _tasks.length,
+                  itemBuilder: (context, i) {
+                    final t = _tasks[i];
+                    // Parsear fecha
+                    DateTime? fecha;
+                    try { fecha = DateTime.parse(t.ultimaFecha!); } catch(_) {}
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // AREA LABEL
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFE5A3),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    "Area",
-                                    style: TextStyle(
-                                      color: Colors.orange[700],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                    final fechaStr = fecha != null
+                        ? DateFormat("d MMM (EEE) - HH:mm", "es_ES").format(fecha)
+                        : "Fecha desconocida";
 
-                                const SizedBox(height: 8),
+                    // BUSCAR EL NOMBRE REAL USANDO EL DICCIONARIO
+                    final nombreArea = _nombresDeAreas[t.areaId] ?? "Área desconocida";
 
-                                // AREA NAME
-                                Text(
-                                  _getAreaName(t.areaId),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.black,
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Etiqueta del Área
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "Area",
+                                style: TextStyle(
+                                    color: Colors.orange[800],
                                     fontWeight: FontWeight.bold,
-                                  ),
+                                    fontSize: 12
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
 
-                                const SizedBox(height: 4),
+                            // Nombre del Área (REAL)
+                            Text(
+                              nombreArea,
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87
+                              ),
+                            ),
 
-                                // TASK DETAIL
-                                Text(
-                                  fechaStr,
-                                  style: const TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                Text(
-                                  t.nombre,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 17,
-                                  ),
-                                ),
+                            const SizedBox(height: 4),
 
-                                const SizedBox(height: 16),
-                                Divider(color: Colors.blue.shade200),
-                                const SizedBox(height: 16),
-                              ],
-                            );
-                          },
+                            // Detalle Tarea
+                            Text(fechaStr, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 2),
+                            Text(
+                              t.nombre,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
                         ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -230,20 +225,5 @@ class _PantallaTareasCompletasState extends State<PantallaTareasCompletas> {
         ),
       ),
     );
-  }
-
-  /// Obtén el nombre del área según su ID
-  String _getAreaName(int id) {
-    // Luego puedes reemplazar esto con tu tabla real de Áreas en SQLite
-    switch (id) {
-      case 1:
-        return "Cocina";
-      case 2:
-        return "Sala";
-      case 3:
-        return "Baño";
-      default:
-        return "Área desconocida";
-    }
   }
 }
