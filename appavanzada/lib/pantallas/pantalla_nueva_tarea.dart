@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../db/database_helper.dart';
 import '../models/tarea.dart';
-import 'pantalla_ajustar_tarea.dart'; // (falta implementar)
+import 'pantalla_ajustar_tarea.dart';
 
 class PantallaNuevaTarea extends StatefulWidget {
   final int areaId;
@@ -55,17 +55,22 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
             onPressed: () async {
               String nombre = controller.text.trim();
 
-              if (nombre.isNotEmpty) {
-                // Evita repetidos (insensible a mayúsculas)
-                bool existe = tareasExistentes.any(
-                    (t) => t.nombre.toLowerCase() == nombre.toLowerCase());
+              if (nombre.length < 2) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Nombre muy corto")),
+                );
+                return;
+              }
 
-                if (!existe) {
-                  // Solo seleccionamos el nombre, no insertamos aún
-                  setState(() {
-                    tareaSeleccionada = nombre;
-                  });
-                }
+              bool existe = tareasExistentes.any(
+                (t) => t.nombre.toLowerCase() == nombre.toLowerCase(),
+              );
+
+              if (!existe) {
+                
+                setState(() {
+                  tareaSeleccionada = nombre;
+                });
               }
 
               Navigator.pop(context);
@@ -91,7 +96,6 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
       ),
       body: Column(
         children: [
-          // LISTA DE TAREAS
           Expanded(
             child: ListView.builder(
               itemCount: tareasExistentes.length,
@@ -114,7 +118,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
             ),
           ),
 
-          // BOTÓN ADICIONAR TAREA
+          // BOTÓN ADICIONAR
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton.icon(
@@ -156,10 +160,9 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PantallaAjustarTarea(
-                            // Aquí pasarías los parámetros necesarios
                             areaId: widget.areaId,
                             nombreTarea: tareaSeleccionada!,
-                              ),
+                          ),
                         ),
                       );
                     },

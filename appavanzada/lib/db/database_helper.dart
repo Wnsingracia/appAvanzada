@@ -167,4 +167,31 @@ class DatabaseHelper {
 
     return maps.map((e) => Tarea.fromMap(e)).toList();
   }
+
+  Future<int> insertTareaNombreSiNoExiste(Tarea tarea) async {
+    final db = await database;
+
+    // Revisar si ya existe una tarea con ese nombre (insensible a mayúsculas)
+    final res = await db.query(
+      'tareas',
+      where: 'LOWER(nombre) = ?',
+      whereArgs: [tarea.nombre.toLowerCase()],
+      limit: 1,
+    );
+
+    if (res.isNotEmpty) {
+      // Ya existe, no insertamos
+      return 0;
+    }
+
+    // No existe, insertar
+    return await db.insert('tareas', tarea.toMap());
+  }
+
+  Future<int> deleteTodasLasAreas() async {
+    final db = await instance.database;
+    return await db.delete(
+      'areas',
+    ); // reemplaza 'areas' con tu nombre real de tabla
+  }
 }

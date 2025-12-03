@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/area_storage.dart'; // Importamos para poder borrar datos si quieres
+import '../db/database_helper.dart'; // Usamos DB directamente
+
+
 
 class Configuracion extends StatefulWidget {
   const Configuracion({super.key});
@@ -9,7 +11,7 @@ class Configuracion extends StatefulWidget {
 }
 
 class _ConfiguracionState extends State<Configuracion> {
-  // Estado local para simular las preferencias
+
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   bool _biometricEnabled = false;
@@ -25,7 +27,7 @@ class _ConfiguracionState extends State<Configuracion> {
       ),
       body: ListView(
         children: [
-          // 1. Cabecera de Usuario (Estética)
+
           Container(
             color: const Color(0xFF0095FF),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
@@ -54,6 +56,7 @@ class _ConfiguracionState extends State<Configuracion> {
             ),
           ),
 
+
           const SizedBox(height: 20),
 
           // 2. Sección General
@@ -64,6 +67,7 @@ class _ConfiguracionState extends State<Configuracion> {
             subtitle: const Text('Cambiar la apariencia de la aplicación'),
             secondary: const Icon(Icons.dark_mode),
             value: _isDarkMode,
+
             onChanged: (bool value) {
               setState(() => _isDarkMode = value);
               // Aquí llamarías a tu ThemeProvider
@@ -80,7 +84,6 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const Divider(),
 
-          // 3. Sección de Seguridad
           _buildSectionTitle('Seguridad'),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
@@ -93,8 +96,9 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const Divider(),
 
-          // 4. ZONA DE PELIGRO (Muy útil para SQLite)
-          _buildSectionTitle('Base de Datos y Almacenamiento'),
+          // --- Zona de peligro: base de datos ---
+          _buildSectionTitle('Base de Datos'),
+
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: const Text('Borrar todas las áreas', style: TextStyle(color: Colors.red)),
@@ -114,7 +118,7 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const SizedBox(height: 30),
 
-          // Versión de la app
+
           const Center(
             child: Text(
               'Versión 1.0.2 (Beta)',
@@ -141,13 +145,15 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
-  // Diálogo para confirmar borrado de base de datos
+
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Estás seguro?'),
-        content: const Text('Esto borrará toda la base de datos SQLite local. Tus áreas desaparecerán.'),
+
+        content: const Text('Esto borrará todas las áreas en la base de datos SQLite local.'),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -155,14 +161,16 @@ class _ConfiguracionState extends State<Configuracion> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // Cerrar diálogo
 
-              // Llamamos al método clear() de tu AreaStorage
-              await AreaStorage().clear();
+              Navigator.pop(context);
+
+              final db = DatabaseHelper.instance;
+              await db.deleteTodasLasAreas(); // <-- Método en DBHelper
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Base de datos reiniciada')),
+                  const SnackBar(content: Text('Todas las áreas han sido borradas')),
+
                 );
               }
             },

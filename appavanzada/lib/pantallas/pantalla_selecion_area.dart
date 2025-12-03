@@ -27,7 +27,7 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
       return ['Personalizar', 'Jardín', 'Garaje', 'Terraza', 'Patio'];
     }
     // Copiar (puede mostrar lo mismo que Dentro por ahora xd)
-    return ['Seleccionar Area', 'Sala de Estar', 'Comedor', 'Dormitorio'];
+    return ['Sala de Estar', 'Comedor', 'Dormitorio'];
   }
 
   @override

@@ -13,7 +13,7 @@ class PantallaTareasPendientes extends StatefulWidget {
 
 class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
   List<Tarea> _tasks = [];
-  String filtroTiempo = "Hoy";
+  String filtroTiempo = "Todas";
   String agruparPor = "Fecha";
 
   @override
@@ -24,34 +24,25 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
 
   /// --- Cargar tareas desde SQLite ---
   Future<void> _loadPendingTasks() async {
-    final DatabaseHelper db = DatabaseHelper.instance;
+    final db = DatabaseHelper.instance;
     final all = await db.getTareasPendientes();
-
-    setState(() {
-      _tasks = all;
-    });
+    setState(() => _tasks = all);
   }
 
   /// --- Convertir fecha String a DateTime ---
   DateTime? parseFecha(String? f) {
     if (f == null) return null;
-
     try {
       return DateTime.parse(f); // formato ISO
     } catch (_) {}
-
-    // dd-MM-yyyy
     try {
       final p = f.split("-");
       return DateTime(int.parse(p[2]), int.parse(p[1]), int.parse(p[0]));
     } catch (_) {}
-
-    // dd/MM/yyyy
     try {
       final p = f.split("/");
       return DateTime(int.parse(p[2]), int.parse(p[1]), int.parse(p[0]));
     } catch (_) {}
-
     return null;
   }
 
@@ -59,10 +50,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
   DateTime? getProximaFecha(Tarea t) {
     final f = parseFecha(t.ultimaFecha);
     if (f == null) return null;
-
-    if (t.cantidadFrecuencia == null || t.unidadFrecuencia == null) {
-      return null;
-    }
+    if (t.cantidadFrecuencia == null || t.unidadFrecuencia == null) return null;
 
     switch (t.unidadFrecuencia) {
       case "días":
@@ -82,7 +70,6 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
   int? diasRestantes(Tarea t) {
     final prox = getProximaFecha(t);
     if (prox == null) return null;
-
     return prox.difference(DateTime.now()).inDays;
   }
 
@@ -92,8 +79,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
 
     result = result.where((t) {
       final dr = diasRestantes(t);
-      if (dr == null) return false;
-
+      if (dr == null) return true; // mantener tareas sin fecha
       switch (filtroTiempo) {
         case "Hoy":
           return dr == 0;
@@ -110,9 +96,46 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
     return result;
   }
 
+  /// --- Obtener nombre del área según ID ---
+  String getAreaName(int id) {
+    // reemplazar con tu tabla de Áreas si la tienes
+    switch (id) {
+      case 1:
+        return "Cocina";
+      case 2:
+        return "Sala";
+      case 3:
+        return "Baño";
+      case 4:
+        return "Comedor";
+      case 5:
+        return "Dormitorio";
+      default:
+        return "Área desconocida";
+    }
+  }
+
+  /// --- Agrupar tareas por área o fecha ---
+  Map<String, List<Tarea>> groupTasks(List<Tarea> tasks) {
+    if (agruparPor == "Área") {
+      final Map<String, List<Tarea>> grouped = {};
+      for (var t in tasks) {
+        final area = getAreaName(t.areaId);
+        if (!grouped.containsKey(area)) grouped[area] = [];
+        grouped[area]!.add(t);
+      }
+      return grouped;
+    } else {
+      // agrupar por fecha (todas juntas)
+      return {"": tasks};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = applyFilters();
+    final grouped = groupTasks(filtered);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A85FF),
       body: SafeArea(
@@ -122,11 +145,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    size: 28,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.arrow_back, size: 28, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
                 Expanded(
@@ -150,45 +169,10 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
               color: const Color(0xFF0A85FF),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Column(
-                    children: const [
-                      Text(
-                        "Debido\nDentro :",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-
-                  DropdownButton<String>(
-                    value: filtroTiempo,
-                    dropdownColor: Colors.blue,
-                    style: const TextStyle(color: Colors.white),
-                    items: const [
-                      DropdownMenuItem(value: "Hoy", child: Text("Hoy")),
-                      DropdownMenuItem(
-                        value: "Atrasadas",
-                        child: Text("Atrasadas"),
-                      ),
-                      DropdownMenuItem(
-                        value: "Próximos 7 días",
-                        child: Text("Próximos 7 días"),
-                      ),
-                      DropdownMenuItem(value: "Todas", child: Text("Todas")),
-                    ],
-                    onChanged: (v) => setState(() => filtroTiempo = v!),
-                  ),
-
-                  Column(
-                    children: const [
-                      Text(
-                        "Agrupar\npor :",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-
+                  const Text("Agrupar por :", style: TextStyle(color: Colors.white)),
+                  const SizedBox(width: 10),
                   DropdownButton<String>(
                     value: agruparPor,
                     dropdownColor: Colors.blue,
@@ -211,57 +195,88 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
                   color: Color(0xFF74B8FF),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
                 ),
-                child: filtered.isEmpty
+                child: grouped.isEmpty
                     ? const Center(
                         child: Text(
                           "No hay tareas pendientes",
                           style: TextStyle(color: Colors.white, fontSize: 18),
                         ),
                       )
-                    : ListView.builder(
+                    : ListView(
                         padding: const EdgeInsets.all(12),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, i) {
-                          final t = filtered[i];
-                          final dr = diasRestantes(t);
-                          final prox = getProximaFecha(t);
+                        children: grouped.entries.expand((entry) {
+                          final areaName = entry.key;
+                          final tareas = entry.value;
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  t.nombre,
+                          List<Widget> widgets = [];
+
+                          // Si estamos agrupando por área, mostrar subtítulo
+                          if (agruparPor == "Área") {
+                            widgets.add(
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  areaName,
                                   style: const TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                if (prox != null)
-                                  Text(
-                                    "Próxima fecha: ${DateFormat('d MMM yyyy', 'es_ES').format(prox)}",
+                              ),
+                            );
+                          }
+
+                          for (var t in tareas) {
+                            final dr = diasRestantes(t);
+                            final prox = getProximaFecha(t);
+
+                            widgets.add(Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          t.nombre,
+                                          style: const TextStyle(
+                                              fontSize: 18, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      Text(
+                                        getAreaName(t.areaId),
+                                        style: const TextStyle(
+                                            fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+                                      ),
+                                    ],
                                   ),
-                                if (dr != null)
-                                  Text(
-                                    dr < 0
-                                        ? "Atrasada por ${dr.abs()} días"
-                                        : "Faltan $dr días",
-                                    style: TextStyle(
-                                      color: dr < 0 ? Colors.red : Colors.green,
-                                      fontWeight: FontWeight.bold,
+                                  const SizedBox(height: 4),
+                                  if (prox != null)
+                                    Text(
+                                      "Próxima fecha: ${DateFormat('d MMM yyyy', 'es_ES').format(prox)}",
                                     ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
+                                  if (dr != null)
+                                    Text(
+                                      dr < 0 ? "Atrasada por ${dr.abs()} días" : "Faltan $dr días",
+                                      style: TextStyle(
+                                        color: dr < 0 ? Colors.red : Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ));
+                          }
+
+                          return widgets;
+                        }).toList(),
                       ),
               ),
             ),
