@@ -176,8 +176,8 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     if(n.contains('baño')) return 'https://inspirame.corona.co/wp-content/uploads/2023/08/productos-lanzamiento-Corona-3-1024x614.jpg';
     if(n.contains('terraza')) return 'https://st.hzcdn.com/simgs/54d10a2e05cfcd6d_14-7361/home-design.jpg';
     if(n.contains('patio')) return 'https://st.hzcdn.com/simgs/dec122f30f1444cb_4-2239/contemporaneo-patio.jpg';
-
     if (n.isEmpty) return null;
+    return null;
     
   }
 
