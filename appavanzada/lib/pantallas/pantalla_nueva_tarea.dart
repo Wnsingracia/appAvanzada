@@ -67,13 +67,20 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
               );
 
               if (!existe) {
-                
                 setState(() {
                   tareaSeleccionada = nombre;
                 });
               }
 
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PantallaAjustarTarea(
+                    areaId: widget.areaId,
+                    nombreTarea: tareaSeleccionada!,
+                  ),
+                ),
+              );
             },
             child: const Text("Añadir"),
           ),

@@ -92,15 +92,31 @@ class _InfoAreaState extends State<InfoArea> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Center(
-                child: Text(
-                  widget.area.name,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+              child: Row(
+                children: [
+                SizedBox(width: 25),
+                  IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                    size: 28,
                   ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
+                SizedBox(width: 75),
+                  Center(
+                    child: Text(
+                      widget.area.name,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 

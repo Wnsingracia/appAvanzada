@@ -1,3 +1,4 @@
+import 'package:appavanzada/pantallas/pantalla_areas.dart';
 import 'package:flutter/material.dart';
 import '../db/database_helper.dart';
 import '../models/tarea.dart';
@@ -22,7 +23,8 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
   void initState() {
     super.initState();
     _calcularEstado();
-    estadoSeleccionado = estadoTexto; // Inicializamos el chip activo según el progreso real
+    estadoSeleccionado =
+        estadoTexto; // Inicializamos el chip activo según el progreso real
   }
 
   // Convertir unidad a días
@@ -85,7 +87,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
 
     await DatabaseHelper.instance.updateTarea(nuevaTarea);
 
-    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PantallaAreas()));
   }
 
   // CHIP INTERACTIVO PARA CAMBIAR BARRA
@@ -97,9 +99,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
       backgroundColor: Colors.white,
       label: Text(
         texto,
-        style: TextStyle(
-          color: activo ? Colors.white : Colors.black,
-        ),
+        style: TextStyle(color: activo ? Colors.white : Colors.black),
       ),
       selected: activo,
       onSelected: (_) {
@@ -119,7 +119,10 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0095FF),
-        title: const Text("Estado actual", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Estado actual",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
@@ -127,7 +130,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
         color: const Color(0xFFE0F0FF),
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Column(
@@ -168,11 +171,12 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
             // Chips interactivos para cambiar barra
             Row(
               children: [
-                _estadoBoton("Bien", 1.0),
+                const SizedBox(width: 50),
+                _estadoBoton("Hacer ya", 0.2),
                 const SizedBox(width: 8),
                 _estadoBoton("Aún no", 0.6),
                 const SizedBox(width: 8),
-                _estadoBoton("Hacer ya", 0.2),
+                _estadoBoton("Bien", 1.0),
               ],
             ),
             const SizedBox(height: 35),
