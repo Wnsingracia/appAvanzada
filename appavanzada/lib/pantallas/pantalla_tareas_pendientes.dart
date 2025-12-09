@@ -3,6 +3,7 @@ import 'package:appavanzada/models/tarea.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Pantalla que muestra las tareas pendientes
 class PantallaTareasPendientes extends StatefulWidget {
   const PantallaTareasPendientes({super.key});
 
@@ -12,41 +13,50 @@ class PantallaTareasPendientes extends StatefulWidget {
 }
 
 class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
+  // Lista de tareas cargadas desde SQLite
   List<Tarea> _tasks = [];
+
+  // Filtro de tiempo: "Hoy", "Atrasadas", "Próximos 7 días", "Todas"
   String filtroTiempo = "Todas";
+
+  // Forma de agrupar la lista: por "Fecha" o por "Área"
   String agruparPor = "Fecha";
 
   @override
   void initState() {
     super.initState();
-    _loadPendingTasks();
+    _loadPendingTasks(); // Cargar tareas pendientes al iniciar
   }
 
-  /// --- Cargar tareas desde SQLite ---
+  /// --- Cargar todas las tareas pendientes desde SQLite ---
   Future<void> _loadPendingTasks() async {
     final db = DatabaseHelper.instance;
     final all = await db.getTareasPendientes();
-    setState(() => _tasks = all);
+    setState(() => _tasks = all); // Actualizar el estado con las tareas
   }
 
-  /// --- Convertir fecha String a DateTime ---
+  /// --- Convertir una fecha String a DateTime ---
   DateTime? parseFecha(String? f) {
     if (f == null) return null;
+
     try {
-      return DateTime.parse(f); // formato ISO
+      return DateTime.parse(f); // Formato ISO
     } catch (_) {}
+
     try {
       final p = f.split("-");
       return DateTime(int.parse(p[2]), int.parse(p[1]), int.parse(p[0]));
     } catch (_) {}
+
     try {
       final p = f.split("/");
       return DateTime(int.parse(p[2]), int.parse(p[1]), int.parse(p[0]));
     } catch (_) {}
-    return null;
+
+    return null; // No se pudo parsear
   }
 
-  /// --- Calcular próxima fecha según frecuencia ---
+  /// --- Calcular la próxima fecha según la frecuencia de la tarea ---
   DateTime? getProximaFecha(Tarea t) {
     final f = parseFecha(t.ultimaFecha);
     if (f == null) return null;
@@ -66,20 +76,22 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
     }
   }
 
-  /// --- Calcular días restantes ---
+  /// --- Calcular los días restantes hasta la próxima fecha ---
   int? diasRestantes(Tarea t) {
     final prox = getProximaFecha(t);
     if (prox == null) return null;
     return prox.difference(DateTime.now()).inDays;
   }
 
-  /// --- Aplicar filtro de tiempo ---
+  /// --- Aplicar filtro de tiempo a las tareas ---
   List<Tarea> applyFilters() {
     List<Tarea> result = [..._tasks];
 
     result = result.where((t) {
       final dr = diasRestantes(t);
-      if (dr == null) return true; // mantener tareas sin fecha
+
+      if (dr == null) return true; // Mantener tareas sin fecha
+
       switch (filtroTiempo) {
         case "Hoy":
           return dr == 0;
@@ -96,9 +108,9 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
     return result;
   }
 
-  /// --- Obtener nombre del área según ID ---
+  /// --- Obtener nombre del área según su ID ---
   String getAreaName(int id) {
-    // reemplazar con tu tabla de Áreas si la tienes
+    // Cambiar esto si tienes una tabla real de áreas en SQLite
     switch (id) {
       case 1:
         return "Cocina";
@@ -115,7 +127,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
     }
   }
 
-  /// --- Agrupar tareas por área o fecha ---
+  /// --- Agrupar tareas por área o dejar todas juntas por fecha ---
   Map<String, List<Tarea>> groupTasks(List<Tarea> tasks) {
     if (agruparPor == "Área") {
       final Map<String, List<Tarea>> grouped = {};
@@ -126,15 +138,15 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
       }
       return grouped;
     } else {
-      // agrupar por fecha (todas juntas)
+      // Agrupar por fecha: todas juntas
       return {"": tasks};
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = applyFilters();
-    final grouped = groupTasks(filtered);
+    final filtered = applyFilters(); // Aplicar filtro de tiempo
+    final grouped = groupTasks(filtered); // Agrupar según configuración
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A85FF),
@@ -160,7 +172,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 40),
+                const SizedBox(width: 40), // espacio para balancear el Row
               ],
             ),
 
@@ -187,7 +199,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
               ),
             ),
 
-            // ------------------ LISTA DE PENDIENTES ------------------
+            // ------------------ LISTA DE TAREAS ------------------
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -205,12 +217,12 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
                     : ListView(
                         padding: const EdgeInsets.all(12),
                         children: grouped.entries.expand((entry) {
-                          final areaName = entry.key;
-                          final tareas = entry.value;
+                          final areaName = entry.key; // Nombre del grupo
+                          final tareas = entry.value; // Tareas dentro del grupo
 
                           List<Widget> widgets = [];
 
-                          // Si estamos agrupando por área, mostrar subtítulo
+                          // Si se agrupa por área, agregar subtítulo
                           if (agruparPor == "Área") {
                             widgets.add(
                               Padding(
@@ -227,6 +239,7 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
                             );
                           }
 
+                          // Iterar sobre las tareas de cada grupo
                           for (var t in tareas) {
                             final dr = diasRestantes(t);
                             final prox = getProximaFecha(t);
@@ -258,10 +271,12 @@ class _PantallaTareasPendientesState extends State<PantallaTareasPendientes> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
+                                  // Mostrar próxima fecha si existe
                                   if (prox != null)
                                     Text(
                                       "Próxima fecha: ${DateFormat('d MMM yyyy', 'es_ES').format(prox)}",
                                     ),
+                                  // Mostrar días restantes
                                   if (dr != null)
                                     Text(
                                       dr < 0 ? "Atrasada por ${dr.abs()} días" : "Faltan $dr días",
