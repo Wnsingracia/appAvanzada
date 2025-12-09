@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/tarea.dart';
-import 'pantalla_ajustar_tarea.dart';
+import '../db/database_helper.dart'; // Base de datos SQLite
+import '../models/tarea.dart'; // Modelo de tarea
+import 'pantalla_ajustar_tarea.dart'; // Pantalla para ajustar detalles de la tarea
 
+// Pantalla para seleccionar o crear una nueva tarea en un área específica
 class PantallaNuevaTarea extends StatefulWidget {
-  final int areaId;
+  final int areaId; // ID del área donde se añadirá la tarea
 
   const PantallaNuevaTarea({super.key, required this.areaId});
 
@@ -13,25 +14,27 @@ class PantallaNuevaTarea extends StatefulWidget {
 }
 
 class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
-  List<Tarea> tareasExistentes = [];
-  String? tareaSeleccionada;
+  List<Tarea> tareasExistentes = []; // Lista de tareas ya existentes
+  String? tareaSeleccionada; // Tarea seleccionada por el usuario
 
   @override
   void initState() {
     super.initState();
-    _cargarTareas();
+    _cargarTareas(); // Cargar tareas existentes al iniciar la pantalla
   }
 
+  // --- Cargar tareas de la base de datos ---
   Future<void> _cargarTareas() async {
     final db = DatabaseHelper.instance;
-    final tareas = await db.getTodasLasTareasNoRepetidas();
+    final tareas = await db.getTodasLasTareasNoRepetidas(); // Obtener todas las tareas únicas
 
     if (!mounted) return;
     setState(() {
-      tareasExistentes = tareas;
+      tareasExistentes = tareas; // Actualizar la lista visible
     });
   }
 
+  // --- Mostrar popup para agregar tarea personalizada ---
   void _mostrarPopupAdicionarTarea() {
     final controller = TextEditingController();
 
@@ -48,30 +51,33 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context), // Cerrar popup
             child: const Text("Cancelar"),
           ),
           TextButton(
             onPressed: () async {
-              String nombre = controller.text.trim();
+              String nombre = controller.text.trim(); // Limpiar espacios
 
               if (nombre.length < 2) {
+                // Validación de longitud mínima
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Nombre muy corto")),
                 );
                 return;
               }
 
+              // Comprobar si la tarea ya existe
               bool existe = tareasExistentes.any(
                 (t) => t.nombre.toLowerCase() == nombre.toLowerCase(),
               );
 
               if (!existe) {
                 setState(() {
-                  tareaSeleccionada = nombre;
+                  tareaSeleccionada = nombre; // Seleccionar la nueva tarea
                 });
               }
 
+              // Abrir pantalla para ajustar detalles de la tarea
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -103,6 +109,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
       ),
       body: Column(
         children: [
+          // --- Lista de tareas existentes ---
           Expanded(
             child: ListView.builder(
               itemCount: tareasExistentes.length,
@@ -117,7 +124,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                       : const Icon(Icons.circle_outlined),
                   onTap: () {
                     setState(() {
-                      tareaSeleccionada = tarea.nombre;
+                      tareaSeleccionada = tarea.nombre; // Selección de tarea
                     });
                   },
                 );
@@ -125,7 +132,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
             ),
           ),
 
-          // BOTÓN ADICIONAR
+          // --- Botón para adicionar tarea personalizada ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton.icon(
@@ -137,7 +144,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: _mostrarPopupAdicionarTarea,
+              onPressed: _mostrarPopupAdicionarTarea, // Mostrar popup
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 "Adicionar Tarea",
@@ -146,14 +153,14 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
             ),
           ),
 
-          // BOTÓN SIGUIENTE
+          // --- Botón para continuar a ajustar la tarea ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: tareaSeleccionada == null
                     ? Colors.grey
-                    : const Color(0xFF0095FF),
+                    : const Color(0xFF0095FF), // Inactivo si no hay selección
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -161,7 +168,7 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
                 ),
               ),
               onPressed: tareaSeleccionada == null
-                  ? null
+                  ? null // Deshabilitado si no hay tarea seleccionada
                   : () {
                       Navigator.push(
                         context,
@@ -181,3 +188,9 @@ class _PantallaNuevaTareaState extends State<PantallaNuevaTarea> {
     );
   }
 }
+
+// --- Resumen de la página ---
+// Esta pantalla permite al usuario seleccionar una tarea existente o crear una nueva para un área específica.
+// - Muestra una lista de tareas ya registradas.
+// - Permite crear tareas personalizadas mediante un popup.
+// - Después de seleccionar o crear una tarea, el usuario puede avanzar a la pantalla de ajuste de detalles (PantallaAjustarTarea).
