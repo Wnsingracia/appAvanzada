@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/area.dart';
-import '../db/database_helper.dart';
+import '../models/area.dart'; // Modelo Area
+import '../db/database_helper.dart'; // Base de datos
 
+// Pantalla para crear una nueva área o editar una existente
 class PantallaNuevaArea extends StatefulWidget {
-  final String areaNombre;
-  final int tipo; // 0 Dentro, 1 Fuera, 2 Copiar
-  final bool isCustom;
-  final String? originalName; // si no es null → edición
+  final String areaNombre; // Nombre inicial o existente del área
+  final int tipo; // Tipo del área: 0 Dentro, 1 Fuera, 2 Copiar
+  final bool isCustom; // Indica si es un área personalizada
+  final String? originalName; // Si no es null → edición de área existente
 
   const PantallaNuevaArea({
     super.key,
@@ -21,54 +22,59 @@ class PantallaNuevaArea extends StatefulWidget {
 }
 
 class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
-  late TextEditingController _controller;
-  final db = DatabaseHelper.instance;
+  late TextEditingController _controller; // Controlador para el TextField
+  final db = DatabaseHelper.instance; // Instancia de la base de datos
 
   @override
   void initState() {
     super.initState();
+    // Inicializar el controlador con el nombre del área
     _controller = TextEditingController(text: widget.areaNombre);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.dispose(); // Liberar recursos del controlador
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final name = _controller.text;
-    final imageUrl = _imageForArea(name);
-    final tabs = ['Dentro', 'Fuera', 'Copiar'];
+    final name = _controller.text; // Nombre actual en el TextField
+    final imageUrl = _imageForArea(name); // Obtener URL de imagen según nombre
+    final tabs = ['Dentro', 'Fuera', 'Copiar']; // Tipos de área
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF0095FF),
         title: Text(widget.originalName == null ? 'Nueva Área' : 'Editar Área'),
         actions: [
+          // Botón GUARDAR
           TextButton(
             onPressed: () async {
               final finalName = _controller.text.trim();
 
               if (finalName.isEmpty) {
+                // Validación: nombre obligatorio
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Ingresa un nombre para el área')),
                 );
                 return;
               }
 
-              await _saveArea(finalName);
+              await _saveArea(finalName); // Guardar área en base de datos
             },
             child: const Text('GUARDAR', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
       body: Container(
-        color: const Color.fromARGB(255, 103, 179, 255),
+        color: const Color.fromARGB(255, 103, 179, 255), // Fondo azul claro
         child: Column(
           children: [
             const SizedBox(height: 16),
+
+            // --- Input de nombre del área ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -78,7 +84,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
                   const SizedBox(height: 6),
 
                   TextField(
-                    controller: _controller,
+                    controller: _controller, // Controlador del nombre
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
                     ),
@@ -86,11 +92,12 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setState(() {}), // Actualizar vista al escribir
                   ),
 
                   const SizedBox(height: 40),
 
+                  // --- Vista previa de la imagen del área ---
                   Center(
                     child: Container(
                       width: 260,
@@ -110,10 +117,10 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
 
             const Spacer(),
 
-            // Tabs
+            // --- Tabs para seleccionar tipo de área ---
             Row(
               children: List.generate(3, (i) {
-                final isSel = widget.tipo == i;
+                final isSel = widget.tipo == i; // Verificar si es el tipo seleccionado
                 return Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -131,6 +138,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
 
             const SizedBox(height: 8),
 
+            // --- Lista de sugerencias de áreas comunes ---
             Expanded(
               child: ListView(
                 children: [
@@ -150,6 +158,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     );
   }
 
+  // --- Widget para cada área sugerida ---
   Widget _areaTile(String name, String selected) {
     final isSelected = name.toLowerCase() == selected.toLowerCase();
     return Container(
@@ -157,6 +166,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
       child: ListTile(
         title: Text(name, style: const TextStyle(color: Colors.white)),
         onTap: () {
+          // Al tocar, se actualiza el TextField con el nombre seleccionado
           setState(() {
             _controller.text = name;
           });
@@ -165,6 +175,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     );
   }
 
+  // --- Obtener imagen según nombre del área ---
   String? _imageForArea(String name) {
     final n = name.toLowerCase();
     if (n.contains('comedor')) return 'https://planner5d.com/blog/content/images/2025/04/comedor.negro.moderno.jpg';
@@ -178,9 +189,9 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     if(n.contains('patio')) return 'https://st.hzcdn.com/simgs/dec122f30f1444cb_4-2239/contemporaneo-patio.jpg';
     if (n.isEmpty) return null;
     return null;
-    
   }
 
+  // --- Generar semilla para imagen basada en nombre ---
   String _seedForName(String name) {
     if (name.isEmpty) return 'area';
     final cleaned = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -188,6 +199,7 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
     return cleaned.substring(0, cleaned.length.clamp(1, 12));
   }
 
+  // --- Guardar área en base de datos ---
   Future<void> _saveArea(String finalName) async {
     final area = Area(
       name: finalName,
@@ -205,6 +217,13 @@ class _PantallaNuevaAreaState extends State<PantallaNuevaArea> {
 
     if (!mounted) return;
 
-    Navigator.of(context).pop(); // volver 1 pantalla
+    Navigator.of(context).pop(); // Volver a la pantalla anterior
   }
 }
+
+// --- Resumen de la página ---
+// Esta pantalla permite al usuario crear una nueva área o editar una existente.
+// - El usuario puede ingresar o seleccionar un nombre de área.
+// - Se muestra una imagen representativa según el nombre.
+// - Se pueden elegir los tipos: Dentro, Fuera o Copiar.
+// - Permite guardar el área en la base de datos o actualizar una existente.
