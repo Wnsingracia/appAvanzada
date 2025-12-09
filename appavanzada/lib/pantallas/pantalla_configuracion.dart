@@ -1,11 +1,12 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
-import '../db/database_helper.dart';
-import '../models/area.dart';
+import 'dart:convert'; // Para convertir objetos a JSON
+import 'dart:io'; // Para trabajar con archivos
+import 'package:flutter/material.dart'; // Librería principal de Flutter
+import 'package:shared_preferences/shared_preferences.dart'; // Para guardar preferencias locales
+import 'package:path_provider/path_provider.dart'; // Para obtener directorios del dispositivo
+import '../db/database_helper.dart'; // Nuestro helper para SQLite
+import '../models/area.dart'; // Modelo Area
 
+// Pantalla de configuración general de la aplicación
 class Configuracion extends StatefulWidget {
   const Configuracion({super.key});
 
@@ -14,17 +15,18 @@ class Configuracion extends StatefulWidget {
 }
 
 class _ConfiguracionState extends State<Configuracion> {
-  bool _isDarkMode = false;
-  bool _notificationsEnabled = true;
-  bool _biometricEnabled = false; // solo visual
+  // --- Variables de estado de la configuración ---
+  bool _isDarkMode = false; // Activar modo oscuro
+  bool _notificationsEnabled = true; // Activar notificaciones
+  bool _biometricEnabled = false; // Activar biometría (solo visual)
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _loadSettings(); // Cargar configuraciones guardadas al iniciar
   }
 
-  // Cargar preferencias guardadas
+  // --- Función para cargar preferencias guardadas ---
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -34,23 +36,26 @@ class _ConfiguracionState extends State<Configuracion> {
     });
   }
 
-  // Guardar preferencias
+  // --- Función para guardar cualquier preferencia ---
   Future<void> _saveSetting(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool(key, value);
   }
 
-  // Crear copia de seguridad de todas las áreas en JSON
+  // --- Función para crear copia de seguridad de todas las áreas ---
   Future<void> _createBackup() async {
-    final db = DatabaseHelper.instance;
-    final List<Area> areas = await db.getAreas();
-    final List<Map<String, dynamic>> jsonList = areas.map((a) => a.toMap()).toList();
+    final db = DatabaseHelper.instance; // Obtenemos la instancia de la base de datos
+    final List<Area> areas = await db.getAreas(); // Obtenemos todas las áreas
+    final List<Map<String, dynamic>> jsonList = areas.map((a) => a.toMap()).toList(); // Convertimos a JSON
 
+    // Obtenemos la carpeta de documentos del dispositivo
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/backup_areas.json');
 
+    // Escribimos el archivo JSON
     await file.writeAsString(jsonEncode(jsonList));
 
+    // Mensaje visual indicando dónde se guardó la copia
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Copia guardada en: ${file.path}')),
     );
@@ -59,26 +64,30 @@ class _ConfiguracionState extends State<Configuracion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // --- AppBar ---
       appBar: AppBar(
         title: const Text('Configuración'),
         backgroundColor: const Color(0xFF0095FF),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
+      // --- Lista de opciones de configuración ---
       body: ListView(
         children: [
-          // PERFIL SUPERIOR
+          // --- PERFIL SUPERIOR ---
           Container(
             color: const Color(0xFF0095FF),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
             child: Row(
               children: [
+                // Avatar del usuario
                 const CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white,
                   child: Icon(Icons.person, size: 35, color: Color(0xFF0095FF)),
                 ),
                 const SizedBox(width: 15),
+                // Información del usuario
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
@@ -98,8 +107,9 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const SizedBox(height: 20),
 
-          // GENERAL
+          // --- SECCIÓN GENERAL ---
           _buildSectionTitle('General'),
+          // Opción de modo oscuro
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
             title: const Text('Modo Oscuro'),
@@ -111,6 +121,7 @@ class _ConfiguracionState extends State<Configuracion> {
               _saveSetting('isDarkMode', value);
             },
           ),
+          // Opción de notificaciones
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
             title: const Text('Notificaciones'),
@@ -125,8 +136,9 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const Divider(),
 
-          // SEGURIDAD
+          // --- SECCIÓN SEGURIDAD ---
           _buildSectionTitle('Seguridad'),
+          // Opción biométrica (solo visual)
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
             title: const Text('Biometría'),
@@ -141,14 +153,16 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const Divider(),
 
-          // BASE DE DATOS
+          // --- SECCIÓN BASE DE DATOS ---
           _buildSectionTitle('Base de Datos'),
+          // Opción para borrar todas las áreas (acción destructiva)
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: const Text('Borrar todas las áreas', style: TextStyle(color: Colors.red)),
             subtitle: const Text('Esta acción no se puede deshacer'),
             onTap: () => _showDeleteConfirmation(context),
           ),
+          // Opción para crear copia de seguridad de áreas
           ListTile(
             leading: const Icon(Icons.cloud_upload),
             title: const Text('Copia de seguridad'),
@@ -158,6 +172,7 @@ class _ConfiguracionState extends State<Configuracion> {
 
           const SizedBox(height: 30),
 
+          // --- VERSIÓN ---
           const Center(
             child: Text(
               'Versión 1.0.2 (Beta)',
@@ -170,12 +185,12 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
-  // TÍTULOS DE SECCIÓN
+  // --- Helper para títulos de sección ---
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Text(
-        title.toUpperCase(),
+        title.toUpperCase(), // Mostramos en mayúsculas
         style: TextStyle(
           color: Colors.blue[800],
           fontWeight: FontWeight.bold,
@@ -185,7 +200,7 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
-  // BORRAR TODA LA BASE DE DATOS
+  // --- Mostrar cuadro de diálogo para borrar la base de datos ---
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -193,15 +208,17 @@ class _ConfiguracionState extends State<Configuracion> {
         title: const Text('¿Estás seguro?'),
         content: const Text('Esto borrará todas las áreas en la base de datos SQLite local.'),
         actions: [
+          // Cancelar
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('CANCELAR'),
           ),
+          // Confirmar borrado
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(context); // Cerramos el diálogo
               final db = DatabaseHelper.instance;
-              await db.deleteTodasLasAreas();
+              await db.deleteTodasLasAreas(); // Llamada al helper para borrar
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
