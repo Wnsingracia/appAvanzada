@@ -1,10 +1,11 @@
-import 'package:appavanzada/pantallas/pantalla_areas.dart';
+import 'package:appavanzada/pantallas/pantalla_areas.dart'; // Para navegar de regreso a la pantalla de áreas
 import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/tarea.dart';
+import '../db/database_helper.dart'; // Para actualizar la base de datos
+import '../models/tarea.dart'; // Modelo Tarea
 
+// Pantalla que muestra el estado actual de una tarea específica
 class PantallaEstadoTarea extends StatefulWidget {
-  final Tarea tarea;
+  final Tarea tarea; // La tarea que estamos visualizando/ajustando
 
   const PantallaEstadoTarea({super.key, required this.tarea});
 
@@ -13,21 +14,20 @@ class PantallaEstadoTarea extends StatefulWidget {
 }
 
 class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
-  int diasPasados = 0;
-  int frecuenciaEnDias = 1;
-  double progreso = 0.0;
+  int diasPasados = 0; // Cuántos días han pasado desde la última vez que se completó la tarea
+  int frecuenciaEnDias = 1; // Frecuencia de la tarea en días
+  double progreso = 0.0; // Progreso visual de la barra
 
-  String estadoSeleccionado = ""; // Estado actual mostrado en la barra
+  String estadoSeleccionado = ""; // Estado activo mostrado en los chips
 
   @override
   void initState() {
     super.initState();
-    _calcularEstado();
-    estadoSeleccionado =
-        estadoTexto; // Inicializamos el chip activo según el progreso real
+    _calcularEstado(); // Calculamos progreso según la fecha y frecuencia
+    estadoSeleccionado = estadoTexto; // Inicializamos chip activo según progreso
   }
 
-  // Convertir unidad a días
+  // --- Convertir unidad de tiempo a días ---
   int _convertirUnidadADias(String unidad) {
     switch (unidad) {
       case "Semanas":
@@ -40,6 +40,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
     }
   }
 
+  // --- Calcular progreso y estado de la tarea ---
   void _calcularEstado() {
     final ultima = widget.tarea.ultimaFecha != null
         ? DateTime.tryParse(widget.tarea.ultimaFecha!) ?? DateTime.now()
@@ -53,21 +54,24 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
     frecuenciaEnDias = cantidad * _convertirUnidadADias(unidad);
 
     progreso = frecuenciaEnDias > 0 ? diasPasados / frecuenciaEnDias : 1.0;
-    if (progreso > 1) progreso = 1.0;
+    if (progreso > 1) progreso = 1.0; // Limitar progreso a 100%
   }
 
+  // --- Texto del estado según progreso ---
   String get estadoTexto {
     if (progreso < 0.4) return "Hacer ya";
     if (progreso < 0.8) return "Aún no";
     return "Bien";
   }
 
+  // --- Color de la barra según progreso ---
   Color get estadoColor {
     if (progreso < 0.4) return Colors.red;
     if (progreso < 0.8) return Colors.orange;
     return Colors.green;
   }
 
+  // --- Guardar tarea como completada o actualizar última fecha ---
   Future<void> completarTarea() async {
     final fecha = DateTime.now().toIso8601String();
 
@@ -75,22 +79,25 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
     final cuadrosLlenos = (progreso * 5).round();
     final bool estaCompleta = cuadrosLlenos == 5;
 
+    // Crear nueva instancia de tarea con datos actualizados
     final nuevaTarea = Tarea(
       id: widget.tarea.id,
       areaId: widget.tarea.areaId,
       nombre: widget.tarea.nombre,
       cantidadFrecuencia: widget.tarea.cantidadFrecuencia,
       unidadFrecuencia: widget.tarea.unidadFrecuencia,
-      completada: estaCompleta, // ← depende de la barra
+      completada: estaCompleta, // Dependiendo del progreso
       ultimaFecha: fecha,
     );
 
+    // Actualizar en la base de datos
     await DatabaseHelper.instance.updateTarea(nuevaTarea);
 
+    // Volver a la pantalla de áreas
     Navigator.push(context, MaterialPageRoute(builder: (_) => PantallaAreas()));
   }
 
-  // CHIP INTERACTIVO PARA CAMBIAR BARRA
+  // --- Chip interactivo para cambiar barra manualmente ---
   Widget _estadoBoton(String texto, double progresoAsociado) {
     final activo = estadoSeleccionado == texto;
 
@@ -105,7 +112,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
       onSelected: (_) {
         setState(() {
           estadoSeleccionado = texto;
-          progreso = progresoAsociado; // Cambia visualmente la barra
+          progreso = progresoAsociado; // Actualiza barra visualmente
         });
       },
     );
@@ -113,7 +120,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
 
   @override
   Widget build(BuildContext context) {
-    final cuadrosLlenos = (progreso * 5).round();
+    final cuadrosLlenos = (progreso * 5).round(); // Cantidad de cuadros llenos de la barra
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -130,8 +137,8 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
         color: const Color(0xFFE0F0FF),
         padding: const EdgeInsets.all(20),
         child: Column(
-          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- Barra de progreso ---
             Center(
               child: Column(
                 children: [
@@ -140,7 +147,6 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  // Barra de progreso visual
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (i) {
@@ -159,6 +165,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
               ),
             ),
             const SizedBox(height: 30),
+            // --- Nombre de la tarea ---
             Text(
               widget.tarea.nombre,
               style: const TextStyle(
@@ -168,7 +175,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
               ),
             ),
             const SizedBox(height: 20),
-            // Chips interactivos para cambiar barra
+            // --- Chips para cambiar estado manualmente ---
             Row(
               children: [
                 const SizedBox(width: 50),
@@ -180,6 +187,7 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
               ],
             ),
             const SizedBox(height: 35),
+            // --- Botón para guardar cambios ---
             Center(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -197,3 +205,11 @@ class _PantallaEstadoTareaState extends State<PantallaEstadoTarea> {
     );
   }
 }
+
+// --- Resumen de la página ---
+// Esta pantalla permite ver el estado actual de una tarea específica.
+// - Muestra una barra de progreso visual basada en los días pasados vs frecuencia.
+// - Permite cambiar manualmente el estado mediante chips interactivos.
+// - Guarda los cambios de progreso y última fecha en la base de datos.
+// - Permite marcar la tarea como completada si la barra está llena.
+// - Después de guardar, regresa a la pantalla de Áreas.
