@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pantalla_nueva_area.dart';
 
+// Pantalla donde el usuario selecciona el tipo de área (Dentro, Fuera, Copiar)
 class PantallaSelecionArea extends StatefulWidget {
   const PantallaSelecionArea({super.key});
 
@@ -9,13 +10,16 @@ class PantallaSelecionArea extends StatefulWidget {
 }
 
 class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
-  int selectedTab = 0; // 0: Dentro, 1: Fuera, 2: Copiar
+  // Índice del tab seleccionado
+  // 0 = Dentro, 1 = Fuera, 2 = Copiar
+  int selectedTab = 0;
 
+  // Retorna la lista de áreas según el tab seleccionado
   List<String> _areasParaTab(int tab) {
     if (tab == 0) {
-      // Dentro
+      // Áreas "Dentro"
       return [
-        'Personalizar',
+        'Personalizar', // opción para crear un área personalizada
         'Sala de Estar',
         'Comedor',
         'Cocina',
@@ -23,16 +27,23 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
         'Dormitorio',
       ];
     } else if (tab == 1) {
-      // Fuera
-      return ['Personalizar', 'Jardín', 'Garaje', 'Terraza', 'Patio'];
+      // Áreas "Fuera"
+      return [
+        'Personalizar', // opción para crear un área personalizada
+        'Jardín',
+        'Garaje',
+        'Terraza',
+        'Patio',
+      ];
     }
-    // Copiar (puede mostrar lo mismo que Dentro por ahora xd)
+    // Áreas "Copiar" (puede ser igual que Dentro, por ahora)
     return ['Sala de Estar', 'Comedor', 'Dormitorio'];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar con título
       appBar: AppBar(
         title: const Text('Nueva Area'),
         backgroundColor: const Color(0xFF0095FF),
@@ -40,6 +51,7 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
       ),
       body: Column(
         children: [
+          // Parte superior azul con título y tabs
           Expanded(
             child: Container(
               color: const Color(0xFF0095FF),
@@ -57,20 +69,18 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Spacer(),
-                  // Tabs
+                  const Spacer(),
+                  // Fila de tabs: Dentro, Fuera, Copiar
                   Row(
                     children: List.generate(3, (i) {
                       final labels = ['Dentro', 'Fuera', 'Copiar'];
-                      final isSelected = selectedTab == i;
+                      final isSelected = selectedTab == i; // verificar si está activo
                       return Expanded(
                         child: GestureDetector(
                           onTap: () => setState(() => selectedTab = i),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            color: isSelected
-                                ? Colors.blue[600]
-                                : Colors.blue[400],
+                            color: isSelected ? Colors.blue[600] : Colors.blue[400],
                             child: Center(
                               child: Text(
                                 labels[i],
@@ -87,7 +97,7 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
             ),
           ),
 
-          // Area list
+          // Lista de áreas disponibles según el tab
           Container(
             height: 360,
             color: const Color(0xFF0095FF),
@@ -109,24 +119,22 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
                             fontSize: 16,
                           ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                         onTap: () {
                           if (name == 'Personalizar') {
-                            // Abrir pantalla para crear una área personalizada
+                            // Si selecciona "Personalizar", abrir pantalla para crear área nueva
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => const PantallaNuevaArea(
                                   areaNombre: '',
-                                  tipo: 0,
+                                  tipo: 0, // default a Dentro
                                   isCustom: true,
                                 ),
                               ),
                             );
                           } else {
-                            // Cuando selecciona un area existente, abrir pantalla nueva y pasar seleccion
+                            // Si selecciona un área predefinida, abrir PantallaNuevaArea con datos
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -151,3 +159,6 @@ class _PantallaSelecionAreaState extends State<PantallaSelecionArea> {
     );
   }
 }
+
+// Esta pantalla permite al usuario seleccionar el tipo de área (Dentro, Fuera o Copiar),
+// y luego elegir un área predefinida o crear una personalizada ("Personalizar").
