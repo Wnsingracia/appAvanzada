@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../db/database_helper.dart'; // Usamos DB directamente
-
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import '../db/database_helper.dart';
+import '../models/area.dart';
 
 class Configuracion extends StatefulWidget {
   const Configuracion({super.key});
@@ -11,10 +14,47 @@ class Configuracion extends StatefulWidget {
 }
 
 class _ConfiguracionState extends State<Configuracion> {
-
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
-  bool _biometricEnabled = false;
+  bool _biometricEnabled = false; // solo visual
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  // Cargar preferencias guardadas
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
+      _biometricEnabled = prefs.getBool('biometricEnabled') ?? false;
+    });
+  }
+
+  // Guardar preferencias
+  Future<void> _saveSetting(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool(key, value);
+  }
+
+  // Crear copia de seguridad de todas las áreas en JSON
+  Future<void> _createBackup() async {
+    final db = DatabaseHelper.instance;
+    final List<Area> areas = await db.getAreas();
+    final List<Map<String, dynamic>> jsonList = areas.map((a) => a.toMap()).toList();
+
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/backup_areas.json');
+
+    await file.writeAsString(jsonEncode(jsonList));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Copia guardada en: ${file.path}')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +67,7 @@ class _ConfiguracionState extends State<Configuracion> {
       ),
       body: ListView(
         children: [
-
+          // PERFIL SUPERIOR
           Container(
             color: const Color(0xFF0095FF),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
@@ -56,21 +96,19 @@ class _ConfiguracionState extends State<Configuracion> {
             ),
           ),
 
-
           const SizedBox(height: 20),
 
-          // 2. Sección General
+          // GENERAL
           _buildSectionTitle('General'),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
             title: const Text('Modo Oscuro'),
-            subtitle: const Text('Cambiar la apariencia de la aplicación'),
+            subtitle: const Text('Cambiar apariencia de la aplicación'),
             secondary: const Icon(Icons.dark_mode),
             value: _isDarkMode,
-
-            onChanged: (bool value) {
+            onChanged: (value) {
               setState(() => _isDarkMode = value);
-              // Aquí llamarías a tu ThemeProvider
+              _saveSetting('isDarkMode', value);
             },
           ),
           SwitchListTile(
@@ -79,26 +117,32 @@ class _ConfiguracionState extends State<Configuracion> {
             subtitle: const Text('Recibir alertas de mantenimiento'),
             secondary: const Icon(Icons.notifications),
             value: _notificationsEnabled,
-            onChanged: (val) => setState(() => _notificationsEnabled = val),
+            onChanged: (value) {
+              setState(() => _notificationsEnabled = value);
+              _saveSetting('notificationsEnabled', value);
+            },
           ),
 
           const Divider(),
 
+          // SEGURIDAD
           _buildSectionTitle('Seguridad'),
           SwitchListTile(
             activeColor: const Color(0xFF0095FF),
             title: const Text('Biometría'),
-            subtitle: const Text('Usar huella para entrar'),
+            subtitle: const Text('Usar huella (solo visual)'),
             secondary: const Icon(Icons.fingerprint),
             value: _biometricEnabled,
-            onChanged: (val) => setState(() => _biometricEnabled = val),
+            onChanged: (value) {
+              setState(() => _biometricEnabled = value);
+              _saveSetting('biometricEnabled', value);
+            },
           ),
 
           const Divider(),
 
-          // --- Zona de peligro: base de datos ---
+          // BASE DE DATOS
           _buildSectionTitle('Base de Datos'),
-
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
             title: const Text('Borrar todas las áreas', style: TextStyle(color: Colors.red)),
@@ -108,16 +152,11 @@ class _ConfiguracionState extends State<Configuracion> {
           ListTile(
             leading: const Icon(Icons.cloud_upload),
             title: const Text('Copia de seguridad'),
-            subtitle: const Text('Guardar configuración en la nube'),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Función Próximamente')),
-              );
-            },
+            subtitle: const Text('Guardar configuración en archivo local'),
+            onTap: _createBackup,
           ),
 
           const SizedBox(height: 30),
-
 
           const Center(
             child: Text(
@@ -131,6 +170,7 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
+  // TÍTULOS DE SECCIÓN
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -145,15 +185,13 @@ class _ConfiguracionState extends State<Configuracion> {
     );
   }
 
-
+  // BORRAR TODA LA BASE DE DATOS
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Estás seguro?'),
-
         content: const Text('Esto borrará todas las áreas en la base de datos SQLite local.'),
-
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -161,16 +199,13 @@ class _ConfiguracionState extends State<Configuracion> {
           ),
           TextButton(
             onPressed: () async {
-
               Navigator.pop(context);
-
               final db = DatabaseHelper.instance;
-              await db.deleteTodasLasAreas(); // <-- Método en DBHelper
+              await db.deleteTodasLasAreas();
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Todas las áreas han sido borradas')),
-
                 );
               }
             },
